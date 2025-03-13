@@ -1,14 +1,24 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
 # File: port-forward.sh
-# Description: A script to set up port forwarding using socat.
-#              It forwards traffic from a redirect port to a target port.
-#              If socat is not installed, it will attempt to install it.
-# Usage:       ./port-forward.sh <redirect_port> <target_port>
-# Example:     ./port-forward.sh 80 8000
+# Description: A script to set up HTTPS to HTTP port forwarding using socat.
+#              It forwards traffic from an HTTPS port to an HTTP port.
+#              If server.pem is not found, it will attempt to generate it.
+# Usage:       ./port-forward.sh <https_port> <http_port>
+# Example:     ./port-forward.sh 443 8000
 # Dependencies: Requires socat to be installed.
 # Compatibility: Designed for Linux and macOS. Windows support via WSL.
 # -----------------------------------------------------------------------------
+
+# Function to display usage information
+display_usage() {
+    echo "Usage: $0 <https_port> <http_port>"
+    echo "This script sets up HTTPS to HTTP port forwarding using socat."
+    echo "It forwards traffic from an HTTPS port to an HTTP port."
+    echo "Example:"
+    echo "  ./port-forward.sh 443 8000"
+    exit 1
+}
 
 # Function to install socat based on the operating system
 install_socat() {
@@ -50,26 +60,36 @@ install_socat() {
     echo "Info: socat has been installed successfully."
 }
 
+# Function to check and generate server.pem if needed
+generate_server_pem() {
+    if [ ! -f "server.pem" ]; then
+        echo "Info: server.pem not found. Generating it now..."
+        ./generate-server-pem.sh
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to generate server.pem. Please check generate-server-pem.sh."
+            exit 1
+        fi
+    fi
+}
+
 # Check if the correct number of arguments is provided
 if [ $# -ne 2 ]; then
-    echo "Error: Incorrect number of arguments."
-    echo "Usage: $0 <redirect_port> <target_port>"
-    exit 1
+    display_usage
 fi
 
 # Retrieve arguments
-redirect_port="$1"
-target_port="$2"
+https_port="$1"
+http_port="$2"
 
 # Validate port numbers
-if ! [[ "$redirect_port" =~ ^[0-9]+$ ]] || ! [[ "$target_port" =~ ^[0-9]+$ ]]; then
+if ! [[ "$https_port" =~ ^[0-9]+$ ]] || ! [[ "$http_port" =~ ^[0-9]+$ ]]; then
     echo "Error: Port numbers must be valid integers."
-    exit 1
+    display_usage
 fi
 
-if [ "$redirect_port" -lt 1 ] || [ "$redirect_port" -gt 65535 ] || [ "$target_port" -lt 1 ] || [ "$target_port" -gt 65535 ]; then
+if [ "$https_port" -lt 1 ] || [ "$https_port" -gt 65535 ] || [ "$http_port" -lt 1 ] || [ "$http_port" -gt 65535 ]; then
     echo "Error: Port numbers must be between 1 and 65535."
-    exit 1
+    display_usage
 fi
 
 # Check if socat is installed, and install it if not
@@ -77,9 +97,12 @@ if ! command -v socat &> /dev/null; then
     install_socat
 fi
 
+# Generate server.pem if needed
+generate_server_pem
+
 # Set up port forwarding
-echo "Info: Setting up port forwarding from $redirect_port to $target_port..."
-socat TCP-LISTEN:"$redirect_port",fork TCP:127.0.0.1:"$target_port"
+echo "Info: Setting up HTTPS to HTTP port forwarding from $https_port to $http_port..."
+socat -v openssl-listen:"$https_port",reuseaddr,fork,cert=server.pem,verify=0 tcp:127.0.0.1:"$http_port"
 
 # Check if socat started successfully
 if [ $? -ne 0 ]; then
@@ -87,7 +110,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "Info: Port forwarding from $redirect_port to $target_port is now active."
+echo "Info: HTTPS to HTTP port forwarding from $https_port to $http_port is now active."
 echo "Info: Press Ctrl+C to stop the forwarding."
 
 # Keep the script running until the user interrupts
