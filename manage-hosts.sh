@@ -11,16 +11,14 @@
 # Compatibility: Designed for Linux and macOS. Windows support via WSL.
 # -----------------------------------------------------------------------------
 
-# Function to validate domain format
-validate_domain() {
-    local domain="$1"
-    # Regular expression for domain validation
-    local domain_regex="^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$"
-    if ! [[ $domain =~ $domain_regex ]]; then
-        echo "Error: Invalid domain format."
-        return 1
-    fi
-    return 0
+# Function to display usage information
+display_usage() {
+    echo "Usage: $0 <action> [<ip> <domain> | <domain>]"
+    echo "Actions:"
+    echo "  add <ip> <domain>       Add a host entry"
+    echo "  remove <domain>         Remove a host entry"
+    echo "  remove-all <domain>     Remove all entries for a domain"
+    exit 1
 }
 
 # Function to add a host entry
@@ -29,16 +27,13 @@ add_host() {
     local domain="$2"
     local hosts_path="$3"
     
-    # Validate domain format
-    if ! validate_domain "$domain"; then
-        return 1
-    fi
-    
     # Check if the host entry already exists
-    if grep -q "$domain" "$hosts_path"; then
-        echo "Warning: Host entry for $domain already exists."
-        return
-    fi
+    while IFS= read -r line; do
+        if [[ "$line" == "$ip $domain" ]]; then
+            echo "Warning: Host entry for $domain already exists."
+            return
+        fi
+    done < "$hosts_path"
     
     # Add the host entry
     echo "$ip $domain" | sudo tee -a "$hosts_path" > /dev/null
@@ -49,20 +44,29 @@ add_host() {
 remove_host() {
     local domain="$1"
     local hosts_path="$2"
-    
-    # Validate domain format
-    if ! validate_domain "$domain"; then
-        return 1
-    fi
+    local temp_file=$(mktemp)
     
     # Check if the host entry exists
-    if ! grep -q "$domain" "$hosts_path"; then
+    local found=false
+    while IFS= read -r line; do
+        if [[ "$line" == *" $domain" ]]; then
+            found=true
+        fi
+    done < "$hosts_path"
+    
+    if [ "$found" = false ]; then
         echo "Warning: No host entry found for $domain."
         return
     fi
     
     # Remove the host entry
-    sudo sed -i "/$domain/d" "$hosts_path"
+    while IFS= read -r line; do
+        if [[ "$line" != *" $domain" ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$hosts_path"
+    
+    sudo mv "$temp_file" "$hosts_path"
     echo "Info: Removed host entry for $domain"
 }
 
@@ -70,29 +74,69 @@ remove_host() {
 remove_all_hosts_for_domain() {
     local domain_pattern="$1"
     local hosts_path="$2"
-    
-    # Validate domain format
-    if ! validate_domain "$domain_pattern"; then
-        return 1
-    fi
+    local temp_file=$(mktemp)
     
     # Check if any entries for the domain exist
-    if ! grep -q "$domain_pattern" "$hosts_path"; then
+    local found=false
+    while IFS= read -r line; do
+        if [[ "$line" == *" $domain_pattern" ]]; then
+            found=true
+        fi
+    done < "$hosts_path"
+    
+    if [ "$found" = false ]; then
         echo "Warning: No host entries found for domain pattern: $domain_pattern"
         return
     fi
     
     # Remove all entries for the domain
-    sudo sed -i "/$domain_pattern/d" "$hosts_path"
+    while IFS= read -r line; do
+        if [[ "$line" != *" $domain_pattern" ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$hosts_path"
+    
+    sudo mv "$temp_file" "$hosts_path"
     echo "Info: Removed all host entries for domain pattern: $domain_pattern"
 }
 
 # Main function to handle script actions
 main() {
+    # Check if the correct number of arguments is provided
+    if [ $# -lt 1 ]; then
+        display_usage
+    fi
+
     local action="$1"
-    local ip="$2"
-    local domain="$3"
-    
+    local ip=""
+    local domain=""
+
+    # Determine the action and retrieve arguments
+    case "$action" in
+        add)
+            if [ $# -ne 3 ]; then
+                display_usage
+            fi
+            ip="$2"
+            domain="$3"
+            ;;
+        remove)
+            if [ $# -ne 2 ]; then
+                display_usage
+            fi
+            domain="$2"
+            ;;
+        remove-all)
+            if [ $# -ne 2 ]; then
+                display_usage
+            fi
+            domain="$2"
+            ;;
+        *)
+            display_usage
+            ;;
+    esac
+
     # Determine the hosts file path based on the operating system
     local hosts_path=""
     if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "darwin"* ]]; then
@@ -103,18 +147,19 @@ main() {
         echo "Error: Unsupported operating system."
         exit 1
     fi
-    
+
     # Execute the requested action
-    if [ "$action" == "add" ]; then
-        add_host "$ip" "$domain" "$hosts_path"
-    elif [ "$action" == "remove" ]; then
-        remove_host "$domain" "$hosts_path"
-    elif [ "$action" == "remove-all" ]; then
-        remove_all_hosts_for_domain "$domain" "$hosts_path"
-    else
-        echo "Error: Invalid action. Use 'add', 'remove', or 'remove-all'."
-        exit 1
-    fi
+    case "$action" in
+        add)
+            add_host "$ip" "$domain" "$hosts_path"
+            ;;
+        remove)
+            remove_host "$domain" "$hosts_path"
+            ;;
+        remove-all)
+            remove_all_hosts_for_domain "$domain" "$hosts_path"
+            ;;
+    esac
 }
 
 # Execute the main function with the provided arguments
