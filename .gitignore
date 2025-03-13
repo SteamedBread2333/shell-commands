@@ -1,1 +1,3 @@
 server.pem
+server.key
+server.csr
