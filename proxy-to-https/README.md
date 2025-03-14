@@ -1,6 +1,3 @@
-# Introduction
-
-## `proxy-to-https`
 Local service proxy to Any domain
 > following below instructions, if you never used shell
 ### 1. Start your local service, and got the `local_port_number`
