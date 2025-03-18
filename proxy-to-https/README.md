@@ -29,5 +29,5 @@ If you want to use https, you need to run the following commands
 ./port-forward.sh 443 your_local_port_number
 ```
 
-Or you can use `iTerm2` to integrate custom instructions and build them into your `Shell` environment
+Or you can configure an alias in a `.zshrc` or `.bashrc` file.
 ### 3. Open your browser, and visit `your_domain`  <img src="https://emojis.slackmojis.com/emojis/images/1669813533/62956/doge.gif?1669813533" alt="proxy" width="30"/>
