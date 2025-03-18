@@ -9,14 +9,17 @@
 # Retrieve arguments
 domain="$1"
 
-./manage-hosts.sh add 127.0.0.1 "$domain"
+# Get the directory of the script
+path=$(dirname "$0")
 
-./port-forward.sh 443 8000
+$path/manage-hosts.sh add 127.0.0.1 "$domain"
+
+$path/port-forward.sh 443 8000
 # ./port-forward.sh 80 8000
 
 # Function to be executed when Ctrl+C is pressed
 callback() {
-  ./manage-hosts.sh remove "$domain"
+  $path/manage-hosts.sh remove "$domain"
   # chmod -x ./*
   trap - SIGINT
   trap - EXIT

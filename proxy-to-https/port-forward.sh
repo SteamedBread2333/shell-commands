@@ -60,11 +60,14 @@ install_socat() {
     echo "Info: socat has been installed successfully."
 }
 
+# Get the directory of the script
+path=$(dirname "$0")
+
 # Function to check and generate server.pem if needed
 generate_server_pem() {
     if [ ! -f "server.pem" ]; then
         echo "Info: server.pem not found. Generating it now..."
-        ./generate-server-pem.sh
+        $path/generate-server-pem.sh
         if [ $? -ne 0 ]; then
             echo "Error: Failed to generate server.pem. Please check generate-server-pem.sh."
             exit 1
