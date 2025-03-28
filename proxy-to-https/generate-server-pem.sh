@@ -80,7 +80,11 @@ fi
 
 # Generate a self-signed certificate
 echo "Info: Generating self-signed certificate (server.crt)..."
-# 使用 -subj 参数来指定证书的主题，避免交互式输入
+# The -subj option sets the subject of the certificate, which is the domain name of the server.
+# The -days option sets the number of days the certificate is valid for.
+# The -out option specifies the output file name.
+# The -key option specifies the private key file name.
+# The -x509 option specifies that the certificate should be self-signed.
 if ! openssl req -new -key server.key -x509 -days 3653 -out server.crt -subj "/CN=portal-content-nexus-uat.derbysoft-test.com"; then
     echo "Error: Failed to generate self-signed certificate."
     rm server.key
