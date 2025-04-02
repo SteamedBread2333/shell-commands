@@ -33,13 +33,13 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
 # Add nvm configuration to bash_profile and zshrc
-echo "export NVM_DIR=\"$([ -z \"\${XDG_CONFIG_HOME-}\" ] && printf %s \"\${HOME}/.nvm\" || printf %s \"\${XDG_CONFIG_HOME}/nvm\")\"" >> ~/.bash_profile
-echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\" # This loads nvm" >> ~/.bash_profile
-echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \\. \"\$NVM_DIR/bash_completion\" # This loads nvm bash_completion" >> ~/.bash_profile
+echo "export NVM_DIR=\"$([ -z \"\${XDG_CONFIG_HOME-}\" ] && printf %s \"\${HOME}/.nvm\" || printf %s \"\${XDG_CONFIG_HOME}/nvm\")\"" >>~/.bash_profile
+echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\" # This loads nvm" >>~/.bash_profile
+echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \\. \"\$NVM_DIR/bash_completion\" # This loads nvm bash_completion" >>~/.bash_profile
 
-echo "export NVM_DIR=\"$([ -z \"\${XDG_CONFIG_HOME-}\" ] && printf %s \"\${HOME}/.nvm\" || printf %s \"\${XDG_CONFIG_HOME}/nvm\")\"" >> ~/.zshrc
-echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\" # This loads nvm" >> ~/.zshrc
-echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \\. \"\$NVM_DIR/bash_completion\" # This loads nvm bash_completion" >> ~/.zshrc
+echo "export NVM_DIR=\"$([ -z \"\${XDG_CONFIG_HOME-}\" ] && printf %s \"\${HOME}/.nvm\" || printf %s \"\${XDG_CONFIG_HOME}/nvm\")\"" >>~/.zshrc
+echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\" # This loads nvm" >>~/.zshrc
+echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \\. \"\$NVM_DIR/bash_completion\" # This loads nvm bash_completion" >>~/.zshrc
 
 # Install multiple Node.js versions
 echo -e "${GREEN}Installing multiple Node.js versions...${NC}"
@@ -56,23 +56,36 @@ nvm install 20
 echo -e "${GREEN}Setting default Node.js version to 16...${NC}"
 nvm alias default 16
 
-# Install VS Code extensions (optional)
-echo -e "${GREEN}Installing VS Code extensions...${NC}"
-# ESLint: Code analysis tool for identifying and fixing issues in JavaScript code
-code --install-extension dbaeumer.vscode-eslint
-# Prettier: Code formatting tool for maintaining consistent code style
-code --install-extension esbenp.prettier-vscode
-# Path Intellisense: Path autocompletion for efficient file path input
-code --install-extension christian-kohler.path-intellisense
-# EditorConfig: Tool for maintaining consistent code formatting settings
-code --install-extension editorconfig.editorconfig
-# VS Code ESLint: ESLint plugin for VS Code
-code --install-extension dbaeumer.vscode-eslint
-# TypeScript and TSLint plugins: Support for TypeScript development and code analysis
-code --install-extension ms-vscode.vscode-typescript-tslint-plugin
-# Material Icon Theme: Aesthetic icon theme for VS Code
-code --install-extension PKief.material-icon-theme
-# Material Theme: Aesthetic theme for VS Code
-code --install-extension equinusocio.vsc-material-theme
+# Function to check if VS Code is installed
+check_vscode_installed() {
+  if ! command -v code &>/dev/null; then
+    echo -e "${RED}VS Code is not installed. Please install VS Code first.${NC}"
+    return 1
+  fi
+  return 0
+}
+
+if check_vscode_installed; then
+  # Install VS Code extensions (optional)
+  echo -e "${GREEN}Installing VS Code extensions...${NC}"
+  # ESLint: Code analysis tool for identifying and fixing issues in JavaScript code
+  code --install-extension dbaeumer.vscode-eslint
+  # Prettier: Code formatting tool for maintaining consistent code style
+  code --install-extension esbenp.prettier-vscode
+  # Path Intellisense: Path autocompletion for efficient file path input
+  code --install-extension christian-kohler.path-intellisense
+  # EditorConfig: Tool for maintaining consistent code formatting settings
+  code --install-extension editorconfig.editorconfig
+  # VS Code ESLint: ESLint plugin for VS Code
+  code --install-extension dbaeumer.vscode-eslint
+  # TypeScript and TSLint plugins: Support for TypeScript development and code analysis
+  code --install-extension ms-vscode.vscode-typescript-tslint-plugin
+  # Material Icon Theme: Aesthetic icon theme for VS Code
+  code --install-extension PKief.material-icon-theme
+  # Material Theme: Aesthetic theme for VS Code
+  code --install-extension equinusocio.vsc-material-theme
+else
+  echo -e "${YELLOW}Skipping installation of VS Code extensions.${NC}"
+fi
 
 echo -e "${GREEN}Development environment setup completed!${NC}"
